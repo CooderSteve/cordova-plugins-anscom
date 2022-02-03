@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/esol-steve/cordova-plugins-anscom.git"
+    "url": "git+https://github.com/cooderSteve/cordova-plugins-anscom.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/esol-steve/cordova-plugins-anscom/issues"
+    "url": "https://github.com/cooderSteve/cordova-plugins-anscom/issues"
   },
-  "homepage": "https://github.com/esol-steve/cordova-plugins-anscom"
+  "homepage": "https://github.com/cooderSteve/cordova-plugins-anscom"
 }

@@ -6,7 +6,7 @@
     <name>ANSPlugin</name>
     <description>Cordova ANS Plugin</description>
     <keywords>cordova,ANS</keywords>
-    <repo>https://github.com/esol-steve/test</repo>
+    <repo>https://github.com/CooderSteve/cordova-plugins-anscom</repo>
 
     <js-module src="www/anscom.js" name="ANSPlugin">
         <clobbers target="cordova.plugins.anscom" ></clobbers>
