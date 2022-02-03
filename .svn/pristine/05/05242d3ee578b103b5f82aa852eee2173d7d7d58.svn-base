@@ -1,0 +1,262 @@
+package com.ans.cordova.anscom;
+
+
+import android.app.Application;
+import android.app.Activity;
+import android.os.Bundle;
+import android.Manifest; 
+import android.content.pm.PackageManager; 
+
+import org.apache.cordova.Config;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
+
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
+
+//import android.preference.PreferenceManager;
+import android.util.Log;
+
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+
+
+//import com.dmarc.cordovacall.CordovaCall;
+import static android.content.Context.MODE_PRIVATE;
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
+
+public class ANSPlugin extends CordovaPlugin {
+	protected static ANSPlugin instance = null;
+	protected static final String LOG_TAG = "ANSCOM";
+	private final static String SOCKET_SERVER_URL = "https://signal.hostmaster.com.au";
+	private final static String SOCKET_BASE_URL = "/";
+	private final static String SERVER_KEY = "8c3e16df6725bcafd34d8a844a478ef3f5d5badc65f9175669fa862f1cabbd5d";
+	private final static String PREFERENCE_NAME = "ANS_PREF";
+	public static final String ACTION_SET_AUDIO_MODE = "setAudioMode";
+	private static MediaPlayer mplayer;
+	private static Context context;
+	private static Uri notification;
+	private static AudioManager audioManager;
+
+	@Override
+	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+		super.initialize(cordova, webView);
+		context = cordova.getActivity();
+		notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+		
+		audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    	//mplayer = MediaPlayer.create(context, notification);
+    	/**
+    	if (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            Log.d(LOG_TAG,"Permission is granted");
+        } else {
+
+            Log.d(LOG_TAG,"Permission is revoked");
+            String [] permissions = { Manifest.permission.READ_EXTERNAL_STORAGE };
+            cordova.requestPermissions(this, 0, permissions);
+        }**/
+	}
+	
+	// @Override
+	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+		Log.d(LOG_TAG, "ANS Comm Plugin");
+		
+		if (action.equals("init")) {
+			init();
+			callbackContext.success(SERVER_KEY);
+			return true;
+		} else if (action.equals("getPreference")) {
+            return getPublicPreference(args, callbackContext);
+        } else if (action.equals("setPreference")) {
+            return setPublicPreference(args, callbackContext);
+        } else if (action.equals("removePreference")) {
+            return removePreference(args, callbackContext);
+        } else if (action.equals(ACTION_SET_AUDIO_MODE) && args.getString(0).equals("get_volume")) {
+        	Log.d(LOG_TAG, "Setting Audio Volume");
+        	return setAudioMode(args.getString(0), callbackContext);
+        } else if (action.equals(ACTION_SET_AUDIO_MODE)) {
+        	Log.d(LOG_TAG, "Setting Audio Ring Tone");
+			if (!setAudioMode(args.getString(0))) {
+				callbackContext.error("Invalid audio mode:" + args.getString(0));
+				return false;
+			}
+			return true;
+		}
+		callbackContext.error("Incorrect method call");
+		return false;
+	}
+
+	private void init() {
+		cordova.getActivity().runOnUiThread(new Runnable() {
+
+		    @Override
+		    public void run() {
+		    	cordova.getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON|
+			            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD|
+			            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|
+			            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
+		    }
+		});		
+		Log.d(LOG_TAG, "ANS Communications Pty Ltd");
+	}
+	
+
+	public static void setPreference(Context context, String key, String value) {
+		// https://stackoverflow.com/questions/5950043/how-to-use-getsharedpreferences-in-android
+		Log.d(LOG_TAG, "Setting SharedPreferences");
+		Log.d(LOG_TAG, "Key:" + key);
+		Log.d(LOG_TAG, "Value:" + value);
+
+		//SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context); // This one works as well
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(key, value);
+		editor.commit();
+		checkPreference(context, key);
+	}
+
+	private boolean setPublicPreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		//Context context = cordova.getActivity();
+		
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(args.getString(0), args.getString(1));
+		editor.commit();
+		callbackContext.success("Setting "+ args.getString(0)+" to "+ args.getString(1));
+		checkPreference(context, args.getString(0));
+		return true;
+	}
+	
+	private boolean getPublicPreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		//Context context = cordova.getActivity();
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		
+		if (settings.contains(args.getString(0))) {
+			String StoredValue = settings.getString(args.getString(0), "");
+            callbackContext.success(StoredValue);
+            //Log.d(LOG_TAG, "getPreferece Retreived Value:" + StoredValue);
+            return true;
+        } else {
+        	Log.d(LOG_TAG, "Error retrieving key ");
+            callbackContext.error("No data " + args.getString(0));
+            return false;
+        }
+	}
+	
+	private boolean removePreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		//Context context = cordova.getActivity();
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		
+		if (settings.contains(args.getString(0))) {
+			SharedPreferences.Editor editor = settings.edit();
+			editor.remove(args.getString(0));
+			editor.apply();
+            callbackContext.success(args.getString(0) + " successfully removed");
+            return true;
+        } else {
+        	Log.d(LOG_TAG, "Key doesn't exists ");
+            callbackContext.error("No data " + args.getString(0));
+            return false;
+        }
+	}
+
+	private static boolean checkPreference(Context context, String key) {
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		String StoredValue = settings.getString(key, "");
+		Log.d(LOG_TAG, "Preference '"+key+"' Retreived Value:" + StoredValue);
+		return true;
+	}
+	
+	/**
+	 * Set Audio Mode
+	 * https://github.com/alongubkin/audiotoggle/blob/master/src/android/com/dooble/audiotoggle/AudioTogglePlugin.java
+	 */
+	public boolean setAudioMode(String mode, CallbackContext callbackContext) {
+		/**AudioManager audioManager = 
+		    	(AudioManager) context.getSystemService(Context.AUDIO_SERVICE);**/
+		if (mode.equals("get_volume")) {       
+	    	Log.d(LOG_TAG, "Get Volume");
+	    	int volume_level= audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+	    	callbackContext.success(volume_level);
+	    	Log.d(LOG_TAG, "Current volume level:"+ volume_level);
+	        return true;
+	    } else {
+	    	callbackContext.error("Error setting volume");
+	    	return false;
+	    }
+	}
+	
+	public boolean setAudioMode(String mode) {
+	    
+	    
+	    if (mode.equals("earpiece")) {
+	    	Log.d(LOG_TAG, "Audio Mode: EarPiece");
+	    	audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+	    	audioManager.setSpeakerphoneOn(false);
+	        return true;
+	    } else if (mode.equals("speaker")) {     
+	    	Log.d(LOG_TAG, "Audio Mode: Speaker");
+	    	audioManager.setMode(AudioManager.STREAM_MUSIC);
+	    	audioManager.setSpeakerphoneOn(true);
+	        return true;
+	    } else if (mode.equals("ringtone")) {        
+	    	Log.d(LOG_TAG, "Audio Mode: RingTone");
+	    	audioManager.setMode(AudioManager.MODE_RINGTONE);
+	    	audioManager.setSpeakerphoneOn(false);
+	        return true; 
+	    } else if (mode.equals("ringstart")) {        
+	    	Log.d(LOG_TAG, "Audio Mode: Ring");
+	    	audioManager.setSpeakerphoneOn(true);
+	    	audioManager.setMode(AudioManager.STREAM_MUSIC);
+	    	mplayer = MediaPlayer.create(context, notification);
+	    	mplayer.start();
+	    	Log.d(LOG_TAG, "Ring started");
+	        return true; 
+	    } else if (mode.equals("ringstop")) {      
+	    	audioManager.setMode(AudioManager.MODE_NORMAL);
+	    	audioManager.setSpeakerphoneOn(false);
+	    	Log.d(LOG_TAG, "Audio Mode: Stop Ring");
+	    	mplayer.stop();
+	    	
+	    	
+	    	
+	    	Log.d(LOG_TAG, "Ring stopped");
+	        return true; 
+	    } else if (mode.equals("normal")) {       
+	    	Log.d(LOG_TAG, "Audio Mode: Normal");
+	    	audioManager.setMode(AudioManager.MODE_NORMAL);
+	    	audioManager.setSpeakerphoneOn(false);
+	        return true;
+	    } else if (mode.equals("volume_up")) {       
+	    	Log.d(LOG_TAG, "Audio volume up");
+	    	audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.STREAM_MUSIC);
+	        return true;
+	    } else if (mode.equals("volume_down")) {       
+	    	Log.d(LOG_TAG, "Audio volume down");
+	    	audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.STREAM_MUSIC);
+	        return true;
+	    } 
+	    
+	    return false;
+	}
+}

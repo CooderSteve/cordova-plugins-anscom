@@ -1,0 +1,58 @@
+var argscheck = require('cordova/argscheck'),
+	exec = require('cordova/exec');
+
+
+exports.SPEAKER = 'speaker';
+exports.EARPIECE = 'earpiece';
+exports.NORMAL = 'normal';
+exports.RINGTONE = 'ringtone';
+/**
+ * @constructor
+ */
+var ANSPlugin = {
+	init: function(plugin_success, plugin_error) {
+		plugin_success = plugin_success || function(key) {
+			console.log("successfully loaded ANSPlugin: " + key);
+		};
+		plugin_error = plugin_error || function() {
+			console.log("failed to load ANSPlugin");
+		};
+
+		console.log('Running ANSPlugin ...');
+		exec(plugin_success, plugin_error, 'ANSPlugin', 'init', []);
+	},
+
+	getPreference(key, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+
+		exec(successCallback, errorCallback, 'ANSPlugin', 'getPreference', [key]);
+	},
+
+	setPreference(key, value, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+		exec(successCallback, errorCallback, 'ANSPlugin', 'setPreference', [key, value]);
+	},
+	removePreference(key, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+		exec(successCallback, errorCallback, 'ANSPlugin', 'removePreference', [key]);
+	},
+	hasPreference(key, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+		exec(successCallback, errorCallback, 'ANSPlugin', 'hasPreference', [key]);
+	},
+	setAudioMode(mode, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+		exec(successCallback, errorCallback, 'ANSPlugin', 'setAudioMode', [mode]);
+	},
+	set_volume(volume, successCallback, errorCallback) {
+		successCallback = successCallback || function() { };
+		errorCallback = errorCallback || function() { };
+		exec(successCallback, errorCallback, 'ANSPlugin', 'set_volume', [volume]);
+	}
+}
+module.exports = ANSPlugin;

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-plugin-anscom"
+        version="0.0.1">
+    <name>ANSPlugin</name>
+    <description>Cordova ANS Plugin</description>
+    <keywords>cordova,ANS</keywords>
+    <repo>https://github.com/esol-steve/test</repo>
+
+    <js-module src="www/anscom.js" name="ANSPlugin">
+        <clobbers target="cordova.plugins.anscom" ></clobbers>
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="ANSPlugin" >
+                <param name="android-package"
+                       value="com.ans.cordova.anscom.ANSPlugin"/>
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+         
+        <config-file parent="/manifest/application/activity" target="AndroidManifest.xml" mode="merge">
+            <meta-data
+               android:name="android.support.customtabs.trusted.DEFAULT_URL"
+               android:value="https://clouddev.hostmaster.com.au" />
+
+           <!-- This intent-filter adds the Trusted Web Activity to the Android Launcher -->
+           <intent-filter>
+               <action android:name="android.intent.action.MAIN" />
+               <category android:name="android.intent.category.LAUNCHER" />
+           </intent-filter>
+
+           <!--
+             This intent-filter allows the Trusted Web Activity to handle Intents to open
+             airhorner.com.
+           -->
+           <intent-filter>
+               <action android:name="android.intent.action.VIEW"/>
+               <category android:name="android.intent.category.DEFAULT" />
+               <category android:name="android.intent.category.BROWSABLE"/>
+
+               <!-- Edit android:host to handle links to the target URL-->
+               <data
+                 android:scheme="https"
+                 android:host="clouddev.hostmaster.com.au"/>
+           </intent-filter>
+        </config-file>
+        <config-file parent="/manifest/application" target="AndroidManifest.xml">
+            <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+        </config-file>
+  	    <framework src="libs/anscom.gradle" custom="true" type="gradleReference" />
+    	    <source-file src="src/android/ANSPlugin.java" target-dir="com/ans/ansplugin" />
+    	    
+    </platform>
+
+</plugin>

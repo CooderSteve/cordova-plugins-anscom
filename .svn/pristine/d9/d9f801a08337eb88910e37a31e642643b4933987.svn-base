@@ -1,0 +1,145 @@
+package com.ans.cordova.anscom;
+
+import android.app.Application;
+import android.app.Activity;
+import android.os.Bundle;
+
+import org.apache.cordova.Config;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
+
+//import android.preference.PreferenceManager;
+import android.util.Log;
+
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+
+
+import org.json.JSONArray;
+//import com.dmarc.cordovacall.CordovaCall;
+import static android.content.Context.MODE_PRIVATE;
+
+public class ANSPlugin extends CordovaPlugin {
+	protected static ANSPlugin instance = null;
+	protected static final String LOG_TAG = "ANSCOM";
+	private final static String SOCKET_SERVER_URL = "https://signal.hostmaster.com.au";
+	private final static String SOCKET_BASE_URL = "/";
+	private final static String SERVER_KEY = "8c3e16df6725bcafd34d8a844a478ef3f5d5badc65f9175669fa862f1cabbd5d";
+	private final static String PREFERENCE_NAME = "ANS_PREF";
+	
+	// @Override
+	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+		Log.d(LOG_TAG, "ANS Comm Plugin");
+		if (action.equals("init")) {
+			init();
+			callbackContext.success(SERVER_KEY);
+			return true;
+		} else if (action.equals("getPreference")) {
+            return getPublicPreference(args, callbackContext);
+        } else if (action.equals("setPreference")) {
+            return setPublicPreference(args, callbackContext);
+        } else if (action.equals("removePreference")) {
+            return removePreference(args, callbackContext);
+        }
+		return false;
+	}
+
+	private void init() {
+		cordova.getActivity().runOnUiThread(new Runnable() {
+
+		    @Override
+		    public void run() {
+		    	cordova.getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON|
+			            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD|
+			            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED|
+			            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
+		    }
+		});
+		
+		Log.d(LOG_TAG, "ANS Communications Pty Ltd");
+	}
+	
+
+	public static void setPreference(Context context, String key, String value) {
+		// https://stackoverflow.com/questions/5950043/how-to-use-getsharedpreferences-in-android
+		Log.d(LOG_TAG, "Setting SharedPreferences");
+		Log.d(LOG_TAG, "Key:" + key);
+		Log.d(LOG_TAG, "Value:" + value);
+
+		//SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context); // This one works as well
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(key, value);
+		editor.commit();
+		checkPreference(context, key);
+	}
+
+	private boolean setPublicPreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		Context context = cordova.getActivity();
+		
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putString(args.getString(0), args.getString(1));
+		editor.commit();
+		callbackContext.success("Setting "+ args.getString(0)+" to "+ args.getString(1));
+		checkPreference(context, args.getString(0));
+		return true;
+	}
+	
+	private boolean getPublicPreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		Context context = cordova.getActivity();
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		
+		if (settings.contains(args.getString(0))) {
+			String StoredValue = settings.getString(args.getString(0), "");
+            callbackContext.success(StoredValue);
+            //Log.d(LOG_TAG, "getPreferece Retreived Value:" + StoredValue);
+            return true;
+        } else {
+        	Log.d(LOG_TAG, "Error retrieving key ");
+            callbackContext.error("No data " + args.getString(0));
+            return false;
+        }
+	}
+	
+	private boolean removePreference( JSONArray args, CallbackContext callbackContext) throws JSONException {
+		Context context = cordova.getActivity();
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		
+		if (settings.contains(args.getString(0))) {
+			SharedPreferences.Editor editor = settings.edit();
+			editor.remove(args.getString(0));
+			editor.apply();
+            callbackContext.success(args.getString(0) + " successfully removed");
+            return true;
+        } else {
+        	Log.d(LOG_TAG, "Key doesn't exists ");
+            callbackContext.error("No data " + args.getString(0));
+            return false;
+        }
+	}
+
+	
+	private static boolean checkPreference(Context context, String key) {
+		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
+		String StoredValue = settings.getString(key, "");
+		Log.d(LOG_TAG, "Preference '"+key+"' Retreived Value:" + StoredValue);
+		return true;
+	}
+}

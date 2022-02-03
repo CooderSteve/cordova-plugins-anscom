@@ -1,0 +1,23 @@
+
+var argscheck = require('cordova/argscheck'),
+    exec = require('cordova/exec');
+
+/**
+ * @constructor
+ */
+var ANSPlugin = {
+	init: function() {
+		console.log('Running ANSPlugin ...');
+        var success = function(key) {
+            console.log("successfully loaded ANSPlugin: " + key);
+        };
+
+        var error = function() {
+            console.log("failed to load ANSPlugin");
+        }
+
+        exec(plugin_success, plugin_error, 'ANSPlugin', 'init', []);
+    }
+};
+
+module.exports = ANSPlugin;
