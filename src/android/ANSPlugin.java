@@ -26,14 +26,12 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 
-//import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 
-//import com.dmarc.cordovacall.CordovaCall;
 import static android.content.Context.MODE_PRIVATE;
 import android.media.AudioManager;
 import android.media.Ringtone;
@@ -42,19 +40,17 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 
 public class ANSPlugin extends CordovaPlugin {
+
+	public static final String ACTION_SET_AUDIO_MODE = "setAudioMode";
 	protected static ANSPlugin instance = null;
 	protected static final String LOG_TAG = "ANSCOM";
-	private final static String SOCKET_SERVER_URL = "https://signal.hostmaster.com.au";
-	private final static String SOCKET_BASE_URL = "/";
-	private final static String SERVER_KEY = "8c3e16df6725bcafd34d8a844a478ef3f5d5badc65f9175669fa862f1cabbd5d";
-	private final static String PREFERENCE_NAME = "ANS_PREF";
-	public static final String ACTION_SET_AUDIO_MODE = "setAudioMode";
 	private static MediaPlayer mplayer;
 	private static Context context;
 	private static Uri notification;
 	private static AudioManager audioManager;
 	private static int orignalVolumeLevel;
 	private static int maxVolumeLevel;
+	private final static String SERVER_KEY = "8c3e16df6725bcafd34d8a844a478ef3f5d5badc65f9175669fa862f1cabbd5d";
 
 	@Override
 	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -63,16 +59,6 @@ public class ANSPlugin extends CordovaPlugin {
 		notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
 
 		audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-		// mplayer = MediaPlayer.create(context, notification);
-		/**
-		 * if (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
-		 * PackageManager.PERMISSION_GRANTED) { Log.d(LOG_TAG,"Permission is granted");
-		 * } else {
-		 * 
-		 * Log.d(LOG_TAG,"Permission is revoked"); String [] permissions = {
-		 * Manifest.permission.READ_EXTERNAL_STORAGE }; cordova.requestPermissions(this,
-		 * 0, permissions); }
-		 **/
 	}
 
 	// @Override
@@ -87,14 +73,6 @@ public class ANSPlugin extends CordovaPlugin {
 			Log.d(LOG_TAG, "Get SharedPreferences");
 			return getPublicPreference(args, callbackContext);
 		} else if (action.equals("setPreference")) {
-			Log.d(LOG_TAG, "Setting SharedPreferences");
-			/**
-			 * cordova.getThreadPool().execute(new Runnable() {
-			 * 
-			 * @Override public void run() {
-			 *           callbackContext.sendPluginResult(setPublicPreference(args,
-			 *           callbackContext)); } });
-			 **/
 			return setPublicPreference(args, callbackContext);
 		} else if (action.equals("removePreference")) {
 			return removePreference(args, callbackContext);
@@ -130,18 +108,9 @@ public class ANSPlugin extends CordovaPlugin {
 
 			}
 		});
-		Log.d(LOG_TAG, "ANS Communications Pty Ltd");
 	}
 
 	public static void setPreference(Context context, String key, String value) {
-		// https://stackoverflow.com/questions/5950043/how-to-use-getsharedpreferences-in-android
-		Log.d(LOG_TAG, "Setting SharedPreferences");
-		Log.d(LOG_TAG, "Key:" + key);
-		Log.d(LOG_TAG, "Value:" + value);
-
-		// SharedPreferences settings =
-		// PreferenceManager.getDefaultSharedPreferences(context); // This one works as
-		// well
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString(key, value);
@@ -149,7 +118,7 @@ public class ANSPlugin extends CordovaPlugin {
 		checkPreference(context, key);
 	}
 
-	private boolean setPublicPreference(JSONArray args, CallbackContext callbackContext) throws JSONException { 
+	private boolean setPublicPreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		Context context = cordova.getActivity();
 
 		Log.d(LOG_TAG, "Setting SharedPreferences");
@@ -165,26 +134,6 @@ public class ANSPlugin extends CordovaPlugin {
 		return true;
 	}
 
-	/**
-	 * private PluginResult setPublicPreference(JSONArray args, CallbackContext
-	 * callbackContext) { try {
-	 * 
-	 * 
-	 * 
-	 * Log.d(LOG_TAG, "Key:" + args.getString(0)); Log.d(LOG_TAG, "Value:" +
-	 * args.getString(1)); SharedPreferences settings =
-	 * context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
-	 * SharedPreferences.Editor editor = settings.edit();
-	 * editor.putString(args.getString(0), args.getString(1)); editor.commit();
-	 * callbackContext.success("Setting " + args.getString(0) + " to " +
-	 * args.getString(1)); checkPreference(context, args.getString(0)); return new
-	 * PluginResult(PluginResult.Status.OK);
-	 * 
-	 * } catch (JSONException e) { e.printStackTrace(); Log.e(LOG_TAG,
-	 * "getSetSharePreferences" + ": Error: " + PluginResult.Status.JSON_EXCEPTION);
-	 * return new PluginResult(PluginResult.Status.JSON_EXCEPTION); } }
-	 **/
-
 	private boolean getPublicPreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 
@@ -199,7 +148,6 @@ public class ANSPlugin extends CordovaPlugin {
 			String StoredValue = settings.getString(args.getString(0), "");
 			Log.d(LOG_TAG, "SharedPreferences found key: " + args.getString(0) + ":" + StoredValue);
 			callbackContext.success(StoredValue);
-			// Log.d(LOG_TAG, "getPreferece Retreived Value:" + StoredValue);
 			return true;
 		} else {
 			Log.d(LOG_TAG, "Key doesn't exists: " + args.getString(0));
@@ -222,7 +170,6 @@ public class ANSPlugin extends CordovaPlugin {
 	}
 
 	private boolean removePreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
-		// Context context = cordova.getActivity();
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 
 		if (settings.contains(args.getString(0))) {
@@ -273,15 +220,7 @@ public class ANSPlugin extends CordovaPlugin {
 		return true;
 	}
 
-	/**
-	 * Set Audio Mode
-	 * https://github.com/alongubkin/audiotoggle/blob/master/src/android/com/dooble/audiotoggle/AudioTogglePlugin.java
-	 */
 	public boolean setAudioMode(String mode, CallbackContext callbackContext) {
-		/**
-		 * AudioManager audioManager = (AudioManager)
-		 * context.getSystemService(Context.AUDIO_SERVICE);
-		 **/
 		if (mode.equals("get_volume")) {
 			Log.d(LOG_TAG, "Get Volume");
 			int volume_level = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -311,7 +250,6 @@ public class ANSPlugin extends CordovaPlugin {
 				callbackContext.success(currentVolume);
 			} catch (JSONException e) {
 				e.printStackTrace();
-				// Log.d(LOG_TAG, e.printStackTrace());
 			}
 
 			return true;
@@ -343,8 +281,6 @@ public class ANSPlugin extends CordovaPlugin {
 			orignalVolumeLevel = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 			audioManager.setSpeakerphoneOn(true);
 			audioManager.setMode(AudioManager.STREAM_MUSIC);
-			// audioManager.setStreamVolume(AudioManager.MODE_RINGTONE,
-			// audioManager.getStreamMaxVolume(AudioManager.MODE_RINGTONE), 0);
 			int maxVolumeLevel = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 			float percent = 0.7f;
 			int seventyVolume = (int) (maxVolumeLevel * percent);
