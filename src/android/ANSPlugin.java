@@ -110,30 +110,27 @@ public class ANSPlugin extends CordovaPlugin {
 		});
 	}
 
-	public static void setPreference(Context context, String key, String value) {
-		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
-		SharedPreferences.Editor editor = settings.edit();
-		editor.putString(key, value);
-		editor.commit();
-		checkPreference(context, key);
-	}
-
+	/**
+	 * This method stores key/value passed by Cordova
+	 * @param JSONArray arg
+	 * @throws JSONException
+	 */
 	private boolean setPublicPreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		Context context = cordova.getActivity();
-
-		Log.d(LOG_TAG, "Setting SharedPreferences");
-		Log.d(LOG_TAG, "Key:" + args.getString(0));
-		Log.d(LOG_TAG, "Value:" + args.getString(1));
 
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString(args.getString(0), args.getString(1));
 		editor.commit();
-		callbackContext.success("Setting " + args.getString(0) + " to " + args.getString(1));
 		checkPreference(context, args.getString(0));
 		return true;
 	}
 
+	/**
+	 * This method fetches the stored key/value and return it to Cordova
+	 * @param (Json) args passed by Cordova
+	 * @throws JSONException
+	 */
 	private boolean getPublicPreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 
@@ -156,6 +153,13 @@ public class ANSPlugin extends CordovaPlugin {
 		}
 	}
 
+	/**
+	 * This method check of a key value has been set
+	 * @param JSONArray arg
+	 * @param callbackContext
+	 * @return
+	 * @throws JSONException
+	 */
 	private boolean hasPreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 
@@ -169,6 +173,13 @@ public class ANSPlugin extends CordovaPlugin {
 		}
 	}
 
+	/**
+	 * This method removes a key/value set
+	 * @param args
+	 * @param callbackContext
+	 * @return
+	 * @throws JSONException
+	 */
 	private boolean removePreference(JSONArray args, CallbackContext callbackContext) throws JSONException {
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 
@@ -185,6 +196,12 @@ public class ANSPlugin extends CordovaPlugin {
 		}
 	}
 
+	/**
+	 * This method is used for debugging.  It will return the stored key/value and can be viewed in debugging tools
+	 * @param context
+	 * @param key
+	 * @return
+	 */
 	private static boolean checkPreference(Context context, String key) {
 		SharedPreferences settings = context.getSharedPreferences(PREFERENCE_NAME, MODE_PRIVATE);
 		String StoredValue = settings.getString(key, "");
@@ -192,6 +209,12 @@ public class ANSPlugin extends CordovaPlugin {
 		return true;
 	}
 
+	/**
+	 * This method is used to manage the audio setting on a Android Device
+	 * @param volume
+	 * @param callbackContext
+	 * @return
+	 */
 	private boolean setAudioVolume(String volume, CallbackContext callbackContext) {
 		int maxVolumeLevel = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 		boolean speaker = audioManager.isSpeakerphoneOn();
@@ -220,6 +243,12 @@ public class ANSPlugin extends CordovaPlugin {
 		return true;
 	}
 
+	/**
+	 * This method is used to select the audio mode for adjustsment used by Cordova
+	 * @param mode
+	 * @param callbackContext
+	 * @return
+	 */
 	public boolean setAudioMode(String mode, CallbackContext callbackContext) {
 		if (mode.equals("get_volume")) {
 			Log.d(LOG_TAG, "Get Volume");
@@ -259,6 +288,12 @@ public class ANSPlugin extends CordovaPlugin {
 		}
 	}
 
+	/**
+	 * This method is used to select the audio mode for adjustsment
+	 * @param mode
+	 * @param callbackContext
+	 * @return
+	 */
 	public boolean setAudioMode(String mode) {
 
 		if (mode.equals("earpiece")) {
